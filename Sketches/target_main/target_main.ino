@@ -24,29 +24,87 @@ String html_1 = R"=====(
   <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
   <meta charset='utf-8'>
   <style>
-    body {font-size:140%;} 
-    #main {display: table; margin: auto;  padding: 0 10px 0 10px; } 
+    input[type=text] {
+      border: 2px solid black;
+      border-radius: 10px;
+      width: 45px;
+      height: 30px;
+      padding: 10px 10px;
+      margin: 4px 4px;
+      box-sizing: border-box;
+      background-color: white;
+      color: black;
+    }
+    
+    input[type=radio] {
+      width: 15px;
+      height: 15px;
+      margin: 0px 0px 0px 0px;
+    }
+    
+    input[type=submit] {
+      border: 2px solid black;
+      border-radius: 10px;
+      width: 65px;
+      height: 30px;
+      margin: 4px 15px;
+      box-sizing: border-box;
+      background-color: green;
+      color: white;
+      font-family: Georgia, "Times New Roman", Times, serif;
+    }
+    
+    .form_style {
+      max-width: 475px;
+      padding: 10px 20px;
+      background: #ccd9ff;
+      margin: 10px auto;
+      padding: 20px;
+      border-radius: 10px;
+      font-family: Georgia, "Times New Roman", Times, serif;
+    }
+    
+    p{
+      color: black; 
+      font-size: 20px;
+      text-align: left;
+      margin: 0px 0px 10px 0px;
+    }
+    
+    body {
+      font-size:140%;
+    }
+     
+    #main {
+      display: table; 
+      margin: auto;  
+      padding: 0 10px 0 10px; 
+    } 
+    
     h2 {text-align:center; } 
+    
     .button { padding:10px 10px 10px 10px; width:100%;  background-color: #50FF50; font-size: 120%;}
+    
     .button_ON { padding:10px 10px 10px 10px; width:100%;  background-color: #50FF50; font-size: 120%;}
+      
     .button_OFF { padding:10px 10px 10px 10px; width:100%;  background-color: #757575; font-size: 120%;}
   </style>
 
 <script>
   function switchLED4(){
-     let c = document.getElementById("LED4"); 
-     console.log (c); 
+     let btn4 = document.getElementById("LED4"); 
+     console.log (btn4); 
      
-     let btn4 = document.getElementById("LED4").value;
-     if (btn4 =="Turn ON the LED")
+     if (btn4.value =="Turn ON the LED")
      {
-       document.getElementById("LED4").value = "Turn OFF the LED";
+       btn4.value = "Turn OFF the LED";
        ajaxLoad('LED4ON'); 
      }
      else
      {
-       document.getElementById("LED4").value = "Turn ON the LED";
-       ajaxLoad('LED4OFF');
+       btn4.value = "Turn ON the LED";
+       let x = "LED4OFF";
+       ajaxLoad(x);
      }
   }
   function switchLED15(){
@@ -85,11 +143,27 @@ String html_1 = R"=====(
 }
 </script>
 
-<title>LED Control</title>
+<title>GALEFORCE TARGETS</title>
   </head>
   <body>
     <div id='main'>
-      <h2>LED Control</h2>
+      <h2>TARGET CONTROL</h2>
+)=====";
+
+String html_t = R"=====(
+  <form class="form_style">
+    <p align=left>Target</p>
+    <input type="radio" id="rdbManual" name="mode" value="manual" checked> Manual
+    <input type="radio" id="rdbUser" name="mode" value="user"> User Input
+    <input type="radio" id="rdbRandom" name="mode" value="random"> Random <br>
+    <span>
+      Conceal Seconds:
+      <input type="text" id="txtConceal" name="username" maxlength="2"><br>
+      Expose Seconds:
+      <input type="text" id="txtExpose" name="username" maxlength="2">
+      <input type="submit">
+     </span>  
+  </form>
 )=====";
 
 String html_2 = R"=====(
@@ -148,8 +222,8 @@ void loop() {
       html_2.replace("Turn OFF the LED","Turn ON the LED");  
     }
   }
-  if(request.indexOf("LED15ON") > 0 )  { digitalWrite(PIN15, HIGH);  }
-  else if  ( request.indexOf("LED415OFF") > 0 ) { digitalWrite(PIN15, LOW);   }
+  if (request.indexOf("LED15ON") > 0 )  { digitalWrite(PIN15, HIGH);  }
+  else if  ( request.indexOf("LED15OFF") > 0 ) { digitalWrite(PIN15, LOW);   }
   else {
     boolean pinStatus = digitalRead(PIN15);
     if (pinStatus==HIGH) { 
@@ -165,11 +239,12 @@ void loop() {
   // Send the response to the client
   client.print(html_header);
   client.print(html_1);
+  client.print(html_t);
   client.print(html_2);
   client.print(html_3);
   client.print(html_4);
   
-  delay(5);
+  delay(50);
   
   Serial.println("Client disonnected");
 
