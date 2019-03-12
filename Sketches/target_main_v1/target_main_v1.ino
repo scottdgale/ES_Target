@@ -183,25 +183,38 @@ String html_end = R"=====(
 // GLOBAL VARIABLES
 //////////////////////////////////////////////////////////////////////////////////////////
 String request = "";                        //variable used to store HTTP requests
+String commmand = "";                       //Substring of the request sent to the target
+byte target = 0;                            //Represents the active target within a command
 WiFiServer server(80);                      //Define a server object utilizing port 80
 RF24 radio(CE, CSN);                        //set up radio config
-char command[10];                           // data to send
-const uint64_t pipe = 0x01;                 // Pipe address
+//RF24 radio_2(CE, CSN);                      //set up radio config
+//RF24 radio_3(CE, CSN);                      //set up radio config
+//RF24 radio_4(CE, CSN);                      //set up radio config
+const uint64_t PIPE_1 = 0x01;               //Pipe address for radio_1
+const uint64_t PIPE_2 = 0x02;               //Pipe address for radio_2
+const uint64_t PIPE_3 = 0x03;               //Pipe address for radio_3
+const uint64_t PIPE_4 = 0x04;               //Pipe address for radio_4
+char commandArray[10];                      //Data char array to send to target
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
 //////////////////////////////////////////////////////////////////////////////////////////
-void initHardware();
-void setupWiFi();
+void initHardware(void);
+void setupWiFi(void);
+void setupRadio(void);
+bool serviceWiFi(void);
 bool processRequest(String);
 void transmitData(void);
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // setup() - EXECUTION STARTS HERE
 //////////////////////////////////////////////////////////////////////////////////////////
 void setup() {          //Execution STARTS HERE
   initHardware();
+  setupRadio();
   digitalWrite(THING_LED, HIGH);
   delay(1000);
   digitalWrite(THING_LED, LOW);
@@ -213,37 +226,78 @@ void setup() {          //Execution STARTS HERE
 // ININITE LOOP - EXECUTION DOES NOT RETURN FROM HERE
 //////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
-  bool flag = false;
-  // Check if a client has connected
-  WiFiClient client = server.available();
+
+  
+  bool wifiActivity = serviceWiFi();
+  
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Transmit data to the appropriate target
+// Param String com: Command string
+// Param byte t: target number associated with the command
+// Return: void
+//////////////////////////////////////////////////////////////////////////////////////////
+void transmitData(String com, byte t){
+  com.toCharArray(commandArray, 10);
+  Serial.println(commandArray);
+  switch (t){
+    case 1:
+      //Set PIPE
+      radio.openWritingPipe(PIPE_1);                          // Open radio write pipe
+      radio.write(&commandArray, sizeof(commandArray));       //Send data payload
+      break;
+    case 2:
+      break;
+    case 3:
+      break;
+    case 4:
+      break;
+  }
+  
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Check is client is trying to connect / request something from the server
+// Return: Boolean - True if service a client / False otherwise
+//////////////////////////////////////////////////////////////////////////////////////////
+bool serviceWiFi(){
+  int first, last;                                    //used to extract substring from request
+  WiFiClient client = server.available();             //If no client the return
   if (!client) {
-    return;
+    return false;
   }
 
-  // Read the first line of the request
-  request = client.readStringUntil('\r');
-  Serial.println(request);
-  client.flush();
+  request = client.readStringUntil('\r');             // Read the first line of the request
+  if (request.indexOf("~")>0){                        //process commands with "~"
+    Serial.println("Request: " + request);
+    client.flush();
+    first = request.indexOf("~");                     //Extract command from request
+    last = request.indexOf("!");
+    request = request.substring(first, last);
   
- 
-  if (request.indexOf("~1")>0){
-    //Service request for target one
-    //Update HTML code to reflect the request
-    Serial.println("Processing Target 1");
-    if (request.indexOf("M")>0) {
+    if (request.indexOf("~1")==0){                     //Service request for target one
+      //Update HTML code to reflect the request
+      Serial.println("Processing Target 1");
+      target = 1;
+    } 
+    else if (request.indexOf("~2")==0){                //Service request for target two
+      Serial.println("Processing Target 2");
+      target = 2;
+    }
+    else if (request.indexOf("~3")==0){                //Service request for target three
+      Serial.println("Processing Target 3");
+      target = 3;
       
     }
-    else if (request.indexOf("U")>0){
+    else if (request.indexOf("~4")==0){                //Service request for target four
+      Serial.println("Processing Target 4");
+      target = 4;
+      
+    }
+    transmitData(request, target);
+  }
 
-    }
-    else if (request.indexOf("R")>0){
-
-    }
-    else{
-      //STOP CONDITION
-    }
-  } //  if (request.indexOf("**1")>0)
-  
   client.flush();
   // Send the response to the client
   client.print(html_header);
@@ -251,38 +305,11 @@ void loop() {
   client.print(html_1);
   client.print(html_end);
  
-  
-  
   delay(5);
   Serial.println("Client disonnected");
+  return true; 
+} //CLOSE serviceWiFi()
 
-  // The client will actually be disconnected 
-  // when the function returns and 'client' object is detroyed
-
-  transmitData(request);
-}
-
-void transmitData(String request){
-  request.toCharArray(command, 10);
-  Serial.println(command);
-  radio.write(&command, sizeof(command));       // Send out payload
-}
-
-
-bool processRequest(String request){
-  if (request.indexOf("**1**")){
-     Serial.println("Target 1: " + request);
-     return false;
-  }
-  else if (request.indexOf("**2**")){
-      Serial.println("Target 2: " + request);
-      return false;
-  }
-  else {          //DEFAULT CASE 
-      Serial.println("DEFAULT - NO COMMAND");
-      return true;
-  }
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // CONFIGURE AND SETUP THE 8266 AS AN ACCESS POINT
@@ -306,24 +333,27 @@ void setupWiFi() {
     AP_NameChar[i] = AP_NameString.charAt(i);
 
   WiFi.softAP(AP_NameChar, WIFIPASSWORD);
-}
+} //CLOSE setupWiFi()
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // INITHARDWARE - STARTS THE SERIAL INTERFACE AND CONFIGURES ALL GPIO PINS
 //////////////////////////////////////////////////////////////////////////////////////////
 void initHardware() {
-  
-  Serial.begin(115200);
+  Serial.begin(115200);                             //Initialize serial output
   //SETUP GPIO PINS-SET LOW /////////////////////
   pinMode(THING_LED, OUTPUT);
   digitalWrite(THING_LED, LOW);
 
+} //CLOSE initHardware()
 
-  //SETUP RF24 ///////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+// setupRadios - SETUP FOUR DISTINCT RADIOS TO COMMUNICATE TO EACH TARGET
+//////////////////////////////////////////////////////////////////////////////////////////
+void setupRadio(){
   radio.begin();                        // Turn on radio
   radio.setPALevel(RF24_PA_LOW);        // Set radio power level
   radio.setDataRate(RF24_250KBPS);      // Set radio data rate
   radio.setChannel(124);                // Set radio channel
-  radio.openWritingPipe(pipe);          // Open radio write pipe
+  radio.openWritingPipe(PIPE_1);        // Open radio write pipe
   radio.stopListening();                // Set up to xmitt
 }
