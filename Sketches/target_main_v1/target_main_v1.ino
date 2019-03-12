@@ -1,4 +1,11 @@
 #include <ESP8266WiFi.h>
+#include <SPI.h>          // SPI Protocol
+#include <nRF24L01.h>     // Radio Class
+#include <RF24.h>         // Radio Class
+
+#define ONE_SEC 1000      // for xmitt delay
+#define CE 15             //Pin 15
+#define CSN 4             //Pin 4 
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // WiFi DEFINITIONS //
@@ -9,8 +16,6 @@ const char WIFIPASSWORD[] = "password";
 // PIN DEFINITIONS //
 //////////////////////////////////////////////////////////////////////////////////////////
 const int THING_LED = 5; // Thing's onboard, green LED
-const int PIN15 = 15;
-const int PIN4 = 4;
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // HTML STRINGS //  
@@ -177,8 +182,12 @@ String html_end = R"=====(
 //////////////////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
 //////////////////////////////////////////////////////////////////////////////////////////
-String request = "";    //variable used to store HTTP requests
-WiFiServer server(80);  //Define a server object utilizing port 80
+String request = "";                        //variable used to store HTTP requests
+WiFiServer server(80);                      //Define a server object utilizing port 80
+RF24 radio(CE, CSN);                        //set up radio config
+char command[10];                           // data to send
+const uint64_t pipe = 0x01;                 // Pipe address
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
@@ -186,18 +195,15 @@ WiFiServer server(80);  //Define a server object utilizing port 80
 void initHardware();
 void setupWiFi();
 bool processRequest(String);
+void transmitData(void);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // setup() - EXECUTION STARTS HERE
 //////////////////////////////////////////////////////////////////////////////////////////
 void setup() {          //Execution STARTS HERE
   initHardware();
-  digitalWrite(PIN15, HIGH);
-  digitalWrite(PIN4, HIGH);
   digitalWrite(THING_LED, HIGH);
   delay(1000);
-  digitalWrite(PIN15, LOW);
-  digitalWrite(PIN4, LOW);
   digitalWrite(THING_LED, LOW);
   setupWiFi();
   server.begin();                                 //Initiates the server function of the 8266
@@ -220,7 +226,7 @@ void loop() {
   client.flush();
   
  
-  if (request.indexOf("**1")>0){
+  if (request.indexOf("~1")>0){
     //Service request for target one
     //Update HTML code to reflect the request
     Serial.println("Processing Target 1");
@@ -236,11 +242,8 @@ void loop() {
     else{
       //STOP CONDITION
     }
-
-      
-
-  }
-  delay (5000);
+  } //  if (request.indexOf("**1")>0)
+  
   client.flush();
   // Send the response to the client
   client.print(html_header);
@@ -251,11 +254,18 @@ void loop() {
   
   
   delay(5);
-  
   Serial.println("Client disonnected");
 
   // The client will actually be disconnected 
   // when the function returns and 'client' object is detroyed
+
+  transmitData(request);
+}
+
+void transmitData(String request){
+  request.toCharArray(command, 10);
+  Serial.println(command);
+  radio.write(&command, sizeof(command));       // Send out payload
 }
 
 
@@ -302,11 +312,18 @@ void setupWiFi() {
 // INITHARDWARE - STARTS THE SERIAL INTERFACE AND CONFIGURES ALL GPIO PINS
 //////////////////////////////////////////////////////////////////////////////////////////
 void initHardware() {
+  
   Serial.begin(115200);
-  //SETUP GPIO PINS and set to LOW
-  pinMode(PIN15, OUTPUT);
-  pinMode(PIN4, OUTPUT);
-  digitalWrite(PIN15, LOW);
-  digitalWrite(PIN4, LOW);
+  //SETUP GPIO PINS-SET LOW /////////////////////
+  pinMode(THING_LED, OUTPUT);
   digitalWrite(THING_LED, LOW);
+
+
+  //SETUP RF24 ///////////////////////////////////
+  radio.begin();                        // Turn on radio
+  radio.setPALevel(RF24_PA_LOW);        // Set radio power level
+  radio.setDataRate(RF24_250KBPS);      // Set radio data rate
+  radio.setChannel(124);                // Set radio channel
+  radio.openWritingPipe(pipe);          // Open radio write pipe
+  radio.stopListening();                // Set up to xmitt
 }
