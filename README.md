@@ -1,9 +1,9 @@
 # ES_Target
 Embedded System Target Project
 
-Control shooting targets with any device via a web browser. 
+Control interactive shooting targets with any device via a web browser. 
 
-How to Use Gale Targets:
+# How to Use Gale Targets:
 
 1. On the target ensure that the switches (white / green connectors) are connected.
 2. On the target ensure that the motor (blue / yellow connector) is connected. 
@@ -20,4 +20,5 @@ IP Address: 192.168.4.1
 
 Note: Higher RF power settings will result in shorter battery life on both the base station and target controllers.
 
-
+![GitHub Logo](/images/logo.png)
+Format: ![Alt Text](url)
