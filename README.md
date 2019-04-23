@@ -20,5 +20,5 @@ IP Address: 192.168.4.1
 
 Note: Higher RF power settings will result in shorter battery life on both the base station and target controllers.
 
-![Block Diagram](/Documents/Block Diagram.jpeg)
+![Block Diagram](/Documents/Block Diagram.jpg)
 Format: ![Alt Text](url)
