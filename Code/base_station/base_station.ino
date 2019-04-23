@@ -6,19 +6,20 @@
 #define ONE_SEC 1000      // for xmitt delay
 #define CE 15             //Pin 15
 #define CSN 4             //Pin 4 
+#define LED 5
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // WiFi DEFINITIONS //
 //////////////////////////////////////////////////////////////////////////////////////////
-const char WIFIPASSWORD[] = "password";
+const char WIFIPASSWORD[] = "targetshoot";
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // PIN DEFINITIONS //
 //////////////////////////////////////////////////////////////////////////////////////////
-const int THING_LED = 5; // Thing's onboard, green LED
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// HTML STRINGS //  
+// HTML STRINGS //
 //////////////////////////////////////////////////////////////////////////////////////////
 String html_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
 
@@ -47,7 +48,7 @@ String html_init = R"=====(
       margin: 0px 0px 0px 0px;
     }
     
-    input[type=submit] {
+    input[type=button] {
       border: 2px solid black;
       border-radius: 10px;
       width: 65px;
@@ -93,10 +94,13 @@ String html_init = R"=====(
 
 <script>
   let DEFAULT_TIME = 5; 
+  let DEFAULT_TARGET = 1;
+  
   function btnOne(){
     let targetMode = "M";
     let conceal = "5";
     let expose = "5";
+    let target = "1";
     let command = ""; 
     //Construct the COMMAND that will be sent to the target
     //Check the mode selected from the radio buttons
@@ -112,6 +116,7 @@ String html_init = R"=====(
     //Get the CONCEAL / EXPOSE times
     conceal = document.getElementById("txtConceal1");
     expose = document.getElementById("txtExpose1");
+    target = document.getElementById("txtTargets1");
 
     console.log(conceal);
     console.log(expose);
@@ -122,15 +127,95 @@ String html_init = R"=====(
     if (expose.value == ""){
       expose.value = DEFAULT_TIME;
     }
+    if (target.value == "") {
+      target.value = DEFAULT_TARGET;
+    }
     
-    command = "~1" + targetMode + "C" + conceal.value + "E" + expose.value + "!";
+    command = "~1" + targetMode + "C" + conceal.value + "E" + expose.value + "T" + target.value + "!";
 
     console.log(command);
     ajaxLoad(command);
     
   } //END btnSubmit1 ******************************************************************************
 
-     
+  function btnTwo(){
+    let targetMode = "M";
+    let conceal = "5";
+    let expose = "5";
+    let target = "1";
+    let command = ""; 
+    //Construct the COMMAND that will be sent to the target
+    //Check the mode selected from the radio buttons
+    if (document.getElementById("rdbManual2").checked) {
+      targetMode = "M";
+    }
+    else if (document.getElementById("rdbUser2").checked) {
+      targetMode = "U";
+    }
+    else{   //Must be RANDOM
+      targetMode = "R";
+    }
+    //Get the CONCEAL / EXPOSE times
+    conceal = document.getElementById("txtConceal2");
+    expose = document.getElementById("txtExpose2");
+    target = document.getElementById("txtTargets2");
+
+    console.log(conceal);
+    console.log(expose);
+
+    if (conceal.value == ""){
+      conceal.value = DEFAULT_TIME;
+    }
+    if (expose.value == ""){
+      expose.value = DEFAULT_TIME;
+    }
+    if (target.value == "") {
+      target.value = DEFAULT_TARGET;
+    }
+    
+    command = "~2" + targetMode + "C" + conceal.value + "E" + expose.value + "T" + target.value + "!";
+
+    console.log(command);
+    ajaxLoad(command);
+    
+  } //END btnSubmit2 ******************************************************************************
+
+  function changePower(){
+    let command = "";
+    //Construct POWER COMMAND that will be sent to the target
+    //Check the mode selected from the radio buttons
+    if (document.getElementById("rdbLow").checked) {
+      command = "~0PWL!";
+    }
+    else if (document.getElementById("rdbMedium").checked) {
+      command = "~0PWA!";
+    }
+    else{   //Must be HIGH
+      command = "~0PWH!";
+    }
+    
+    console.log(command);
+    ajaxLoad(command);
+  }
+
+  function changeSpeed(){
+    let command = "";
+    //Construct SPEED COMMAND that will be sent to the target
+    //Check the mode selected from the radio buttons
+    if (document.getElementById("rdbSlow").checked) {
+      command = "~0SPL!";
+    }
+    else if (document.getElementById("rdbAverage").checked) {
+      command = "~0SPA!";
+    }
+    else{   //Must be HIGH
+      command = "~0SPH!";
+    }
+    
+    console.log(command);
+    ajaxLoad(command);
+  }
+
  var ajaxRequest = null;
  if (window.XMLHttpRequest)  { ajaxRequest =new XMLHttpRequest(); }
  else { ajaxRequest =new ActiveXObject("Microsoft.XMLHTTP"); }
@@ -159,17 +244,55 @@ String html_init = R"=====(
 
 String html_1 = R"=====(
   <form class="form_style">
-    <p align=left>Target</p>
+    <p align=left>Target 1</p>
     <input type="radio" id="rdbManual1" name="mode" value="manual" checked> Manual
     <input type="radio" id="rdbUser1" name="mode" value="user"> User Input
     <input type="radio" id="rdbRandom1" name="mode" value="random"> Random <br>
     <span>
-      Conceal Seconds:
-      <input type="text" id="txtConceal1" maxlength="2" value="5"><br>
-      Expose Seconds:
-      <input type="text" id="txtExpose1" maxlength="2" value="5">
+      Conceal:
+      <input type="text" id="txtConceal1" maxlength="2" value="5">
+      Expose:
+      <input type="text" id="txtExpose1" maxlength="2" value="5"><br>
+      Iterations:
+      <input type="text" id="txtTargets1" maxlength="2" value="5">
       <input type="button" id="btnSubmit1" onclick="btnOne()" value="Submit">
      </span>  
+  </form>
+)=====";
+
+String html_2 = R"=====(
+  <form class="form_style">
+    <p align=left>Target 2</p>
+    <input type="radio" id="rdbManual2" name="mode" value="manual" checked> Manual
+    <input type="radio" id="rdbUser2" name="mode" value="user"> User Input
+    <input type="radio" id="rdbRandom2" name="mode" value="random"> Random <br>
+    <span>
+      Conceal:
+      <input type="text" id="txtConceal2" maxlength="2" value="5">
+      Expose:
+      <input type="text" id="txtExpose2" maxlength="2" value="5"><br>
+      Iterations:
+      <input type="text" id="txtTargets2" maxlength="2" value="5">
+      <input type="button" id="btnSubmit2" onclick="btnTwo()" value="Submit">
+     </span>  
+  </form>
+)=====";
+
+String html_speed = R"=====(
+  <form class="form_style">
+    <p align=center>Target Speed Setting</p>
+    <input type="radio" id="rdbSlow" name="speed" onclick="changeSpeed()" value="low"> Low
+    <input type="radio" id="rdbAverage" name="speed" onclick="changeSpeed()" value="medium" checked> Medium
+    <input type="radio" id="rdbFast" name="speed" onclick="changeSpeed()" value="high"> High <br>
+  </form>
+)=====";
+
+String html_power = R"=====(
+  <form class="form_style">
+    <p align=center>RF Power Setting</p>
+    <input type="radio" id="rdbLow" name="power" onclick="changePower()" value="low"> Low
+    <input type="radio" id="rdbMedium" name="power" onclick="changePower()" value="medium" checked> Medium
+    <input type="radio" id="rdbHigh" name="power" onclick="changePower()" value="high"> High <br>
   </form>
 )=====";
 
@@ -187,14 +310,11 @@ String commmand = "";                       //Substring of the request sent to t
 byte target = 0;                            //Represents the active target within a command
 WiFiServer server(80);                      //Define a server object utilizing port 80
 RF24 radio(CE, CSN);                        //set up radio config
-//RF24 radio_2(CE, CSN);                      //set up radio config
-//RF24 radio_3(CE, CSN);                      //set up radio config
-//RF24 radio_4(CE, CSN);                      //set up radio config
 const uint64_t PIPE_1 = 0x01;               //Pipe address for radio_1
 const uint64_t PIPE_2 = 0x02;               //Pipe address for radio_2
 const uint64_t PIPE_3 = 0x03;               //Pipe address for radio_3
 const uint64_t PIPE_4 = 0x04;               //Pipe address for radio_4
-char commandArray[10];                      //Data char array to send to target
+char commandArray[15];                      //Data char array to send to target
 
 
 
@@ -207,19 +327,17 @@ void setupRadio(void);
 bool serviceWiFi(void);
 bool processRequest(String);
 void transmitData(void);
-
+void changePower(String);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // setup() - EXECUTION STARTS HERE
 //////////////////////////////////////////////////////////////////////////////////////////
-void setup() {          //Execution STARTS HERE
+void setup() {                                    //Execution STARTS HERE
   initHardware();
   setupRadio();
-  digitalWrite(THING_LED, HIGH);
-  delay(1000);
-  digitalWrite(THING_LED, LOW);
   setupWiFi();
   server.begin();                                 //Initiates the server function of the 8266
+  request = "";
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -227,9 +345,8 @@ void setup() {          //Execution STARTS HERE
 //////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
 
-  
   bool wifiActivity = serviceWiFi();
-  
+  delay(50);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -239,27 +356,51 @@ void loop() {
 // Return: void
 //////////////////////////////////////////////////////////////////////////////////////////
 void transmitData(String com, byte t){
-  com.toCharArray(commandArray, 10);
+  com.toCharArray(commandArray, 15);
   Serial.println(commandArray);
+  Serial.println(t);
   switch (t){
+    case 0:                                                       // Broadcast to all targets
+      radio.openWritingPipe(PIPE_1);  
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload
+      delay(10);
+      radio.openWritingPipe(PIPE_2);  
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload
+      delay(10);
+      radio.openWritingPipe(PIPE_3); 
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload
+      delay(10);
+      radio.openWritingPipe(PIPE_4);    
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload 
+      break;
     case 1:
-      //Set PIPE
-      radio.openWritingPipe(PIPE_1);                          // Open radio write pipe
-      radio.write(&commandArray, sizeof(commandArray));       //Send data payload
+      radio.openWritingPipe(PIPE_1);                          // Set PIPE and Open radio write pipe
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload
       break;
     case 2:
+      radio.openWritingPipe(PIPE_2);                          // Set PIPE and Open radio write pipe
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload
       break;
     case 3:
+      radio.openWritingPipe(PIPE_3);                          // Set PIPE and Open radio write pipe
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload
       break;
     case 4:
+      radio.openWritingPipe(PIPE_4);                          // Set PIPE and Open radio write pipe
+      radio.write(&commandArray, sizeof(commandArray));           //Send data payload
       break;
   }
   
+  
+  for (int i=0; i<10; i++){
+    digitalWrite(LED, !digitalRead(LED));
+    delay(90);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Check is client is trying to connect / request something from the server
-// Return: Boolean - True if service a client / False otherwise
+// Return: Boolean - True if service a client / false otherwise
 //////////////////////////////////////////////////////////////////////////////////////////
 bool serviceWiFi(){
   int first, last;                                    //used to extract substring from request
@@ -274,26 +415,31 @@ bool serviceWiFi(){
     client.flush();
     first = request.indexOf("~");                     //Extract command from request
     last = request.indexOf("!");
-    request = request.substring(first, last);
+    request = request.substring(first, last+1);
   
-    if (request.indexOf("~1")==0){                     //Service request for target one
+    if (request.indexOf("~1")==0){                     //Service request for target 1
       //Update HTML code to reflect the request
       Serial.println("Processing Target 1");
       target = 1;
     } 
-    else if (request.indexOf("~2")==0){                //Service request for target two
+    else if (request.indexOf("~2")==0){                //Service request for target 2
       Serial.println("Processing Target 2");
       target = 2;
     }
-    else if (request.indexOf("~3")==0){                //Service request for target three
+    else if (request.indexOf("~3")==0){                //Service request for target 3
       Serial.println("Processing Target 3");
       target = 3;
-      
     }
-    else if (request.indexOf("~4")==0){                //Service request for target four
+    else if (request.indexOf("~4")==0){                //Service request for target 4
       Serial.println("Processing Target 4");
       target = 4;
-      
+    }
+    else if (request.indexOf("~0")==0){                //Broadcast
+      Serial.println("Broadcast");
+      target = 0;
+      if (request.indexOf("PWR")!=-1){                // If PWR exists in the command - set the power
+        changePower(request);
+      }
     }
     transmitData(request, target);
   }
@@ -303,13 +449,31 @@ bool serviceWiFi(){
   client.print(html_header);
   client.print(html_init);
   client.print(html_1);
+  client.print(html_2);
+  client.print(html_speed);
+  client.print(html_power);
   client.print(html_end);
- 
+
   delay(5);
   Serial.println("Client disonnected");
+  request = ""; 
   return true; 
 } //CLOSE serviceWiFi()
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// Change power setting on the radio
+// Param String request: Command string
+// Return: void
+//////////////////////////////////////////////////////////////////////////////////////////
+void changePower(String request){
+  Serial.println("changePower: " + request);
+  if (request == "~0PWRL")
+    radio.setPALevel(RF24_PA_LOW); 
+  else if (request == "~0PWRM")
+    radio.setPALevel(RF24_PA_HIGH);
+  else if (request == "~0PWRH") 
+    radio.setPALevel(RF24_PA_MAX);  
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // CONFIGURE AND SETUP THE 8266 AS AN ACCESS POINT
@@ -324,7 +488,7 @@ void setupWiFi() {
   String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
                  String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
   macID.toUpperCase();
-  String AP_NameString = "GALE_TARGET" + macID;
+  String AP_NameString = "GALE_TARGET";
 
   char AP_NameChar[AP_NameString.length() + 1];
   memset(AP_NameChar, 0, AP_NameString.length() + 1);
@@ -339,21 +503,21 @@ void setupWiFi() {
 // INITHARDWARE - STARTS THE SERIAL INTERFACE AND CONFIGURES ALL GPIO PINS
 //////////////////////////////////////////////////////////////////////////////////////////
 void initHardware() {
-  Serial.begin(115200);                             //Initialize serial output
+  Serial.begin(9600);                             //Initialize serial output
   //SETUP GPIO PINS-SET LOW /////////////////////
-  pinMode(THING_LED, OUTPUT);
-  digitalWrite(THING_LED, LOW);
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
 
 } //CLOSE initHardware()
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// setupRadios - SETUP FOUR DISTINCT RADIOS TO COMMUNICATE TO EACH TARGET
+// setupRadios - SETUP ONE RADIO TO COMMUNICATE TO EACH TARGET
 //////////////////////////////////////////////////////////////////////////////////////////
 void setupRadio(){
   radio.begin();                        // Turn on radio
-  radio.setPALevel(RF24_PA_LOW);        // Set radio power level
+  radio.setPALevel(RF24_PA_HIGH);       // Set radio power level
   radio.setDataRate(RF24_250KBPS);      // Set radio data rate
   radio.setChannel(124);                // Set radio channel
-  radio.openWritingPipe(PIPE_1);        // Open radio write pipe
+  radio.openWritingPipe(PIPE_1);        // Open radio write - default PIPE_1
   radio.stopListening();                // Set up to xmitt
 }
